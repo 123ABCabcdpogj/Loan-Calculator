@@ -3,1124 +3,644 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Loan Calculator (₹)</title>
+    <title>TaskMaster Pro | Advanced Productivity App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .dark-mode {
-            background-color: #1a202c;
-            color: #f7fafc;
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
         }
-        .dark-mode .card {
-            background-color: #2d3748;
-            border-color: #4a5568;
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
-        .dark-mode input, .dark-mode select {
-            background-color: #4a5568;
-            color: #f7fafc;
-            border-color: #718096;
+        
+        .dark {
+            background-color: #1e293b;
+            color: #f8fafc;
         }
-        .dark-mode .tab-active {
-            background-color: #4a5568;
-            color: #f7fafc;
+        
+        .dark .task-card {
+            background-color: #334155;
+            border-color: #475569;
         }
-        .tooltip {
-            position: relative;
-            display: inline-block;
+        
+        .dark .form-container {
+            background-color: #334155;
+            border-color: #475569;
         }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
+        
+        .dark input, .dark select {
+            background-color: #1e293b;
+            border-color: #475569;
+            color: #f8fafc;
         }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .slide-fade-enter-active {
+        
+        .task-item {
             transition: all 0.3s ease;
         }
-        .slide-fade-leave-active {
-            transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+        
+        .task-item:hover {
+            transform: translateY(-2px);
         }
-        .slide-fade-enter, .slide-fade-leave-to {
-            transform: translateX(10px);
-            opacity: 0;
+        
+        .task-completed {
+            text-decoration: line-through;
+            opacity: 0.7;
         }
-        .currency-input {
-            position: relative;
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
         }
-        .currency-input::before {
-            content: "₹";
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #4a5568;
+        
+        .priority-high {
+            border-left: 4px solid var(--danger);
         }
-        .dark-mode .currency-input::before {
-            color: #f7fafc;
+        
+        .priority-medium {
+            border-left: 4px solid var(--warning);
         }
-        .currency-input input {
-            padding-left: 25px;
+        
+        .priority-low {
+            border-left: 4px solid var(--success);
+        }
+        
+        .category-work {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .category-home {
+            background-color: #ecfccb;
+            color: #65a30d;
+        }
+        
+        .category-urgent {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .dark .category-work {
+            background-color: #1e3a8a;
+            color: #bfdbfe;
+        }
+        
+        .dark .category-home {
+            background-color: #365314;
+            color: #d9f99d;
+        }
+        
+        .dark .category-urgent {
+            background-color: #7f1d1d;
+            color: #fecaca;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+        
+        .empty-state {
+            opacity: 0.6;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .task-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .task-main-content {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .task-details {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-blue-800">Advanced Loan Calculator</h1>
-                <p class="text-sm text-gray-600">All amounts in Indian Rupees (₹)</p>
-            </div>
-            <div class="flex items-center space-x-4">
-                <button id="darkModeToggle" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button id="printBtn" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300">
-                    <i class="fas fa-print"></i>
-                </button>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <!-- Header with theme toggle -->
+        <header class="text-center mb-8 relative">
+            <button id="theme-toggle" class="absolute top-0 right-0 p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:inline"></i>
+            </button>
+            <h1 class="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">TaskMaster Pro</h1>
+            <p class="text-gray-600 dark:text-gray-300">Advanced productivity companion</p>
+            
+            <!-- Progress tracker -->
+            <div class="mt-6 max-w-md mx-auto">
+                <div class="flex justify-between mb-1">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Task Progress</span>
+                    <span id="progress-percent" class="text-sm font-medium text-gray-700 dark:text-gray-300">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                </div>
             </div>
         </header>
-
-        <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Input Section -->
-            <div class="lg:col-span-1">
-                <div class="card bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h2 class="text-xl font-semibold mb-4 text-blue-700">Loan Details</h2>
-                    
-                    <div class="mb-4">
-                        <label for="loanType" class="block text-sm font-medium text-gray-700 mb-1">Loan Type</label>
-                        <select id="loanType" class="w-full p-2 border border-gray-300 rounded-md">
-                            <option value="home">Home Loan</option>
-                            <option value="car">Car Loan</option>
-                            <option value="personal">Personal Loan</option>
-                            <option value="education">Education Loan</option>
-                            <option value="gold">Gold Loan</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-4 currency-input">
-                        <label for="loanAmount" class="block text-sm font-medium text-gray-700 mb-1">Loan Amount</label>
-                        <input type="number" id="loanAmount" class="w-full p-2 border border-gray-300 rounded-md" value="2500000" min="0">
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="interestRate" class="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
-                        <input type="number" id="interestRate" class="w-full p-2 border border-gray-300 rounded-md" value="8.5" step="0.01" min="0">
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="loanTerm" class="block text-sm font-medium text-gray-700 mb-1">Loan Term</label>
-                        <div class="flex">
-                            <input type="number" id="loanTerm" class="w-3/4 p-2 border border-gray-300 rounded-l-md" value="20" min="1">
-                            <select id="termType" class="w-1/4 p-2 border border-gray-300 rounded-r-md">
-                                <option value="years">Years</option>
-                                <option value="months">Months</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input type="date" id="startDate" class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="paymentFrequency" class="block text-sm font-medium text-gray-700 mb-1">Payment Frequency</label>
-                        <select id="paymentFrequency" class="w-full p-2 border border-gray-300 rounded-md">
-                            <option value="monthly">Monthly</option>
-                            <option value="quarterly">Quarterly</option>
-                            <option value="half-yearly">Half-Yearly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <div class="flex items-center">
-                            <input type="checkbox" id="includeFees" class="mr-2">
-                            <label for="includeFees" class="text-sm font-medium text-gray-700">Include Fees & Charges</label>
-                        </div>
-                    </div>
-                    
-                    <div id="feesSection" class="hidden mb-4">
-                        <div class="currency-input">
-                            <label for="loanFees" class="block text-sm font-medium text-gray-700 mb-1">Processing Fees</label>
-                            <input type="number" id="loanFees" class="w-full p-2 border border-gray-300 rounded-md" value="0" min="0">
-                        </div>
-                        <div class="currency-input mt-2">
-                            <label for="insuranceFees" class="block text-sm font-medium text-gray-700 mb-1">Insurance Charges</label>
-                            <input type="number" id="insuranceFees" class="w-full p-2 border border-gray-300 rounded-md" value="0" min="0">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <div class="flex items-center">
-                            <input type="checkbox" id="extraPayments" class="mr-2">
-                            <label for="extraPayments" class="text-sm font-medium text-gray-700">Prepayment Options</label>
-                        </div>
-                    </div>
-                    
-                    <div id="extraPaymentsSection" class="hidden mb-4">
-                        <div class="currency-input">
-                            <label for="extraPaymentAmount" class="block text-sm font-medium text-gray-700 mb-1">Prepayment Amount</label>
-                            <input type="number" id="extraPaymentAmount" class="w-full p-2 border border-gray-300 rounded-md" value="100000" min="0">
-                        </div>
-                        
-                        <div class="mt-2">
-                            <label for="extraPaymentFrequency" class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                            <select id="extraPaymentFrequency" class="w-full p-2 border border-gray-300 rounded-md">
-                                <option value="monthly">Monthly</option>
-                                <option value="yearly">Yearly</option>
-                                <option value="once">One-time</option>
-                            </select>
-                        </div>
-                        
-                        <div id="extraPaymentStartMonthSection" class="mt-2">
-                            <label for="extraPaymentStartMonth" class="block text-sm font-medium text-gray-700 mb-1">Start After Month</label>
-                            <input type="number" id="extraPaymentStartMonth" class="w-full p-2 border border-gray-300 rounded-md" value="0" min="0">
-                        </div>
-                    </div>
-                    
-                    <button id="calculateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        Calculate EMI
-                    </button>
-                </div>
-                
-                <!-- Comparison Section -->
-                <div class="card bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-semibold mb-4 text-blue-700">Compare Loans</h2>
-                    <div class="mb-4">
-                        <button id="addComparisonBtn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md">
-                            <i class="fas fa-plus mr-2"></i>Add Comparison
-                        </button>
-                    </div>
-                    <div id="comparisonContainer"></div>
-                </div>
+        
+        <!-- Search and filter section -->
+        <div class="flex flex-col md:flex-row gap-4 mb-6">
+            <div class="relative flex-1">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Search tasks..." 
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600"
+                >
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
             
-            <!-- Results Section -->
-            <div class="lg:col-span-2">
-                <div class="card bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h2 class="text-xl font-semibold mb-4 text-blue-700">Summary</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <div class="text-sm text-blue-600">EMI Amount</div>
-                            <div id="monthlyPayment" class="text-2xl font-bold">₹21,682</div>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <div class="text-sm text-green-600">Total Interest</div>
-                            <div id="totalInterest" class="text-2xl font-bold">₹27,03,680</div>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-lg">
-                            <div class="text-sm text-purple-600">Total Cost</div>
-                            <div id="totalCost" class="text-2xl font-bold">₹52,03,680</div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="bg-yellow-50 p-4 rounded-lg">
-                            <div class="text-sm text-yellow-600">Payoff Date</div>
-                            <div id="payoffDate" class="text-xl font-bold">May 2043</div>
-                        </div>
-                        <div class="bg-red-50 p-4 rounded-lg">
-                            <div class="text-sm text-red-600">Interest Savings</div>
-                            <div id="interestSavings" class="text-xl font-bold">₹0</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tabs -->
-                    <div class="mb-4 border-b border-gray-200">
-                        <ul class="flex flex-wrap -mb-px" id="resultsTabs">
-                            <li class="mr-2">
-                                <button class="tab-active inline-block p-4 text-blue-600 border-b-2 border-blue-600 rounded-t-lg" data-tab="amortization">Amortization</button>
-                            </li>
-                            <li class="mr-2">
-                                <button class="inline-block p-4 text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" data-tab="charts">Charts</button>
-                            </li>
-                            <li class="mr-2">
-                                <button class="inline-block p-4 text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" data-tab="schedule">Payment Schedule</button>
-                            </li>
-                            <li>
-                                <button class="inline-block p-4 text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" data-tab="analysis">Analysis</button>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Tab Content -->
-                    <div id="tabContent">
-                        <!-- Amortization Tab -->
-                        <div id="amortizationTab" class="tab-pane active">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full bg-white">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="py-2 px-4 border">Payment #</th>
-                                            <th class="py-2 px-4 border">Date</th>
-                                            <th class="py-2 px-4 border">Payment</th>
-                                            <th class="py-2 px-4 border">Principal</th>
-                                            <th class="py-2 px-4 border">Interest</th>
-                                            <th class="py-2 px-4 border">Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="amortizationTable">
-                                        <!-- Will be filled by JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="mt-4 flex justify-between">
-                                <button id="exportCSV" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md">
-                                    <i class="fas fa-file-csv mr-2"></i>Export to CSV
-                                </button>
-                                <button id="prevPage" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md disabled:opacity-50" disabled>
-                                    Previous
-                                </button>
-                                <span id="pageInfo">Page 1 of 5</span>
-                                <button id="nextPage" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Charts Tab -->
-                        <div id="chartsTab" class="tab-pane hidden">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <h3 class="text-lg font-semibold mb-2">Payment Breakdown</h3>
-                                    <canvas id="pieChart" height="300"></canvas>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold mb-2">Amortization Over Time</h3>
-                                    <canvas id="lineChart" height="300"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Schedule Tab -->
-                        <div id="scheduleTab" class="tab-pane hidden">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full bg-white">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="py-2 px-4 border">Year</th>
-                                            <th class="py-2 px-4 border">Principal Paid</th>
-                                            <th class="py-2 px-4 border">Interest Paid</th>
-                                            <th class="py-2 px-4 border">Remaining Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="yearlyScheduleTable">
-                                        <!-- Will be filled by JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Analysis Tab -->
-                        <div id="analysisTab" class="tab-pane hidden">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                <div>
-                                    <h3 class="text-lg font-semibold mb-2">Early Payoff Analysis</h3>
-                                    <div class="mb-4">
-                                        <label for="payoffYears" class="block text-sm font-medium text-gray-700 mb-1">Target Payoff Years</label>
-                                        <input type="number" id="payoffYears" class="w-full p-2 border border-gray-300 rounded-md" value="15" min="1">
-                                    </div>
-                                    <button id="calculatePayoffBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">
-                                        Calculate
-                                    </button>
-                                    <div id="payoffResults" class="mt-4">
-                                        <div class="bg-blue-50 p-4 rounded-lg">
-                                            <div class="text-sm text-blue-600">New EMI Amount</div>
-                                            <div id="newMonthlyPayment" class="text-xl font-bold">₹24,289</div>
-                                        </div>
-                                        <div class="bg-green-50 p-4 rounded-lg mt-2">
-                                            <div class="text-sm text-green-600">Interest Savings</div>
-                                            <div id="payoffInterestSavings" class="text-xl font-bold">₹7,20,000</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold mb-2">Refinance Analysis</h3>
-                                    <div class="mb-2">
-                                        <label for="refinanceRate" class="block text-sm font-medium text-gray-700 mb-1">New Interest Rate (%)</label>
-                                        <input type="number" id="refinanceRate" class="w-full p-2 border border-gray-300 rounded-md" value="7.5" step="0.01" min="0">
-                                    </div>
-                                    <div class="mb-2">
-                                        <label for="refinanceTerm" class="block text-sm font-medium text-gray-700 mb-1">New Term (years)</label>
-                                        <input type="number" id="refinanceTerm" class="w-full p-2 border border-gray-300 rounded-md" value="20" min="1">
-                                    </div>
-                                    <div class="mb-4">
-                                        <label for="refinanceCost" class="block text-sm font-medium text-gray-700 mb-1">Refinance Cost</label>
-                                        <div class="currency-input">
-                                            <input type="number" id="refinanceCost" class="w-full p-2 border border-gray-300 rounded-md" value="5000" min="0">
-                                        </div>
-                                    </div>
-                                    <button id="calculateRefinanceBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">
-                                        Calculate
-                                    </button>
-                                    <div id="refinanceResults" class="mt-4">
-                                        <div class="bg-blue-50 p-4 rounded-lg">
-                                            <div class="text-sm text-blue-600">New EMI Amount</div>
-                                            <div id="refinanceMonthlyPayment" class="text-xl font-bold">₹20,104</div>
-                                        </div>
-                                        <div class="bg-green-50 p-4 rounded-lg mt-2">
-                                            <div class="text-sm text-green-600">Monthly Savings</div>
-                                            <div id="monthlySavings" class="text-xl font-bold">₹1,578</div>
-                                        </div>
-                                        <div class="bg-purple-50 p-4 rounded-lg mt-2">
-                                            <div class="text-sm text-purple-600">Break-even Point</div>
-                                            <div id="breakEvenPoint" class="text-xl font-bold">3.2 years</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="flex gap-2">
+                <select id="filter-select" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600">
+                    <option value="all">All Tasks</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                </select>
+                
+                <select id="sort-select" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="priority">Priority</option>
+                    <option value="name">Alphabetical</option>
+                </select>
             </div>
         </div>
+        
+        <!-- Add Task Form -->
+        <div class="form-container bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+            <form id="task-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="col-span-2">
+                    <input 
+                        type="text" 
+                        id="task-input" 
+                        placeholder="What needs to be done?" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600"
+                        required
+                    >
+                </div>
+                
+                <div>
+                    <select id="priority-select" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600">
+                        <option value="low">Low Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <select id="category-select" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600">
+                        <option value="">No Category</option>
+                        <option value="work">Work</option>
+                        <option value="home">Home</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                
+                <div class="col-span-2">
+                    <input 
+                        type="datetime-local" 
+                        id="due-date" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600"
+                    >
+                </div>
+                
+                <div class="col-span-2 flex justify-end">
+                    <button 
+                        type="submit" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                        <i class="fas fa-plus"></i> Add Task
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Task Stats -->
+        <div class="flex flex-wrap justify-between items-center mb-4 px-2 gap-2">
+            <div class="text-sm text-gray-600 dark:text-gray-300">
+                <span id="total-tasks">0</span> tasks total
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-300">
+                <span id="completed-tasks">0</span> completed
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-300">
+                <span id="pending-tasks">0</span> pending
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-300">
+                <span id="overdue-tasks">0</span> overdue
+            </div>
+        </div>
+        
+        <!-- Task List -->
+        <div id="task-list" class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
+            <!-- Empty state -->
+            <div id="empty-state" class="empty-state p-8 text-center">
+                <i class="fas fa-tasks text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-500 dark:text-gray-400 mb-2">No tasks yet</h3>
+                <p class="text-gray-400 dark:text-gray-500">Add your first task to get started!</p>
+            </div>
+            
+            <!-- Tasks will be added here dynamically -->
+        </div>
+        
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Click to edit tasks • Drag to reorder (coming soon)</p>
+            <p class="mt-2">Made with <i class="fas fa-heart text-red-400"></i> for productive people</p>
+        </footer>
     </div>
 
     <script>
-        // Initialize date to today
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const prioritySelect = document.getElementById('priority-select');
+            const categorySelect = document.getElementById('category-select');
+            const dueDateInput = document.getElementById('due-date');
+            const searchInput = document.getElementById('search-input');
+            const filterSelect = document.getElementById('filter-select');
+            const sortSelect = document.getElementById('sort-select');
+            const taskList = document.getElementById('task-list');
+            const emptyState = document.getElementById('empty-state');
+            const totalTasksSpan = document.getElementById('total-tasks');
+            const completedTasksSpan = document.getElementById('completed-tasks');
+            const pendingTasksSpan = document.getElementById('pending-tasks');
+            const overdueTasksSpan = document.getElementById('overdue-tasks');
+            const progressPercent = document.getElementById('progress-percent');
+            const progressFill = document.getElementById('progress-fill');
+            const themeToggle = document.getElementById('theme-toggle');
+            
+            // Check for saved theme preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark');
+            }
+            
+            // Load tasks from localStorage
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            let editMode = false;
+            let currentEditId = null;
+            
+            // Initialize with today's date in datetime-local format
             const today = new Date();
-            const formattedDate = today.toISOString().substr(0, 10);
-            document.getElementById('startDate').value = formattedDate;
+            const todayFormatted = today.toISOString().slice(0, 16);
+            dueDateInput.value = todayFormatted;
             
-            // Set up event listeners
-            setupEventListeners();
+            // Render tasks on page load
+            renderTasks();
+            updateStats();
             
-            // Calculate initial loan
-            calculateLoan();
+            // Theme toggle
+            themeToggle.addEventListener('click', function() {
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                localStorage.setItem('darkMode', isDark);
+            });
+            
+            // Add new task
+            taskForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const taskText = taskInput.value.trim();
+                if (taskText === '') return;
+                
+                const dueDateValue = dueDateInput.value;
+                const dueDate = dueDateValue ? new Date(dueDateValue) : null;
+                
+                if (editMode) {
+                    // Update existing task
+                    tasks = tasks.map(task => {
+                        if (task.id === currentEditId) {
+                            return {
+                                ...task,
+                                text: taskText,
+                                priority: prioritySelect.value,
+                                category: categorySelect.value,
+                                dueDate: dueDate ? dueDate.toISOString() : null
+                            };
+                        }
+                        return task;
+                    });
+                    
+                    editMode = false;
+                    currentEditId = null;
+                    taskForm.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-plus"></i> Add Task';
+                } else {
+                    // Add new task
+                    const newTask = {
+                        id: Date.now(),
+                        text: taskText,
+                        completed: false,
+                        priority: prioritySelect.value,
+                        category: categorySelect.value,
+                        dueDate: dueDate ? dueDate.toISOString() : null,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    tasks.push(newTask);
+                    
+                    // Set notification if due date is in the future
+                    if (dueDate && dueDate > new Date()) {
+                        setNotification(newTask.id, taskText, dueDate);
+                    }
+                }
+                
+                saveTasks();
+                renderTasks();
+                updateStats();
+                
+                // Reset form
+                taskInput.value = '';
+                prioritySelect.value = 'low';
+                categorySelect.value = '';
+                dueDateInput.value = todayFormatted;
+                taskInput.focus();
+            });
+            
+            // Search tasks
+            searchInput.addEventListener('input', renderTasks);
+            
+            // Filter tasks
+            filterSelect.addEventListener('change', renderTasks);
+            
+            // Sort tasks
+            sortSelect.addEventListener('change', renderTasks);
+            
+            // Render all tasks with search, filter and sort
+            function renderTasks() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const filterValue = filterSelect.value;
+                const sortValue = sortSelect.value;
+                
+                // Filter tasks
+                let filteredTasks = tasks.filter(task => {
+                    const matchesSearch = task.text.toLowerCase().includes(searchTerm);
+                    const matchesFilter = 
+                        filterValue === 'all' || 
+                        (filterValue === 'completed' && task.completed) || 
+                        (filterValue === 'pending' && !task.completed);
+                    
+                    return matchesSearch && matchesFilter;
+                });
+                
+                // Sort tasks
+                filteredTasks.sort((a, b) => {
+                    switch (sortValue) {
+                        case 'date-asc':
+                            return new Date(a.createdAt) - new Date(b.createdAt);
+                        case 'date-desc':
+                            return new Date(b.createdAt) - new Date(a.createdAt);
+                        case 'priority':
+                            const priorityOrder = { high: 3, medium: 2, low: 1 };
+                            return priorityOrder[b.priority] - priorityOrder[a.priority];
+                        case 'name':
+                            return a.text.localeCompare(b.text);
+                        default:
+                            return 0;
+                    }
+                });
+                
+                if (filteredTasks.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                taskList.innerHTML = '';
+                
+                filteredTasks.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = `task-item fade-in border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 priority-${task.priority}`;
+                    taskElement.dataset.id = task.id;
+                    
+                    // Check if task is overdue
+                    const isOverdue = task.dueDate && !task.completed && new Date(task.dueDate) < new Date();
+                    
+                    // Format due date
+                    let dueDateText = '';
+                    if (task.dueDate) {
+                        const dueDate = new Date(task.dueDate);
+                        dueDateText = dueDate.toLocaleString();
+                    }
+                    
+                    taskElement.innerHTML = `
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2 task-main-content">
+                                <div class="flex items-center flex-1">
+                                    <button class="complete-btn mr-3 w-8 h-8 rounded-full border-2 ${
+                                        task.completed ? 'border-green-500 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300' : 'border-gray-300 dark:border-gray-600'
+                                    } flex items-center justify-center">
+                                        ${task.completed ? '<i class="fas fa-check"></i>' : ''}
+                                    </button>
+                                    <div class="flex-1 ${task.completed ? 'task-completed' : ''}">
+                                        <span class="task-text">${task.text}</span>
+                                    </div>
+                                </div>
+                                <div class="task-actions flex gap-2">
+                                    ${task.category ? `<span class="category-${task.category} px-2 py-1 text-xs rounded-full">${
+                                        task.category.charAt(0).toUpperCase() + task.category.slice(1)
+                                    }</span>` : ''}
+                                    <button class="edit-btn text-gray-400 hover:text-blue-500 p-2 rounded-full">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-btn text-gray-400 hover:text-red-500 p-2 rounded-full">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-2 task-details">
+                                <div class="text-sm ${isOverdue ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}">
+                                    ${dueDateText ? `<i class="far fa-clock mr-1"></i> ${dueDateText}` : ''}
+                                    ${isOverdue ? ' (Overdue)' : ''}
+                                </div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                    Created: ${new Date(task.createdAt).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    taskList.appendChild(taskElement);
+                });
+                
+                // Add event listeners to all complete buttons
+                document.querySelectorAll('.complete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        toggleComplete(taskId);
+                    });
+                });
+                
+                // Add event listeners to all edit buttons
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        editTask(taskId);
+                    });
+                });
+                
+                // Add event listeners to all delete buttons
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        deleteTask(taskId);
+                    });
+                });
+                
+                // Add click to edit for task text
+                document.querySelectorAll('.task-text').forEach(textEl => {
+                    textEl.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        editTask(taskId);
+                    });
+                });
+            }
+            
+            // Edit a task
+            function editTask(taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                editMode = true;
+                currentEditId = taskId;
+                
+                taskInput.value = task.text;
+                prioritySelect.value = task.priority;
+                categorySelect.value = task.category || '';
+                
+                if (task.dueDate) {
+                    const dueDate = new Date(task.dueDate);
+                    dueDateInput.value = dueDate.toISOString().slice(0, 16);
+                } else {
+                    dueDateInput.value = todayFormatted;
+                }
+                
+                taskForm.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                taskInput.focus();
+            }
+            
+            // Toggle task completion status
+            function toggleComplete(taskId) {
+                tasks = tasks.map(task => {
+                    if (task.id === taskId) {
+                        return {...task, completed: !task.completed};
+                    }
+                    return task;
+                });
+                
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+            
+            // Delete a task
+            function deleteTask(taskId) {
+                if (confirm('Are you sure you want to delete this task?')) {
+                    tasks = tasks.filter(task => task.id !== taskId);
+                    saveTasks();
+                    renderTasks();
+                    updateStats();
+                }
+            }
+            
+            // Save tasks to localStorage
+            function saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+            
+            // Update task statistics
+            function updateStats() {
+                const totalTasks = tasks.length;
+                const completedCount = tasks.filter(task => task.completed).length;
+                const pendingCount = totalTasks - completedCount;
+                
+                // Count overdue tasks
+                const overdueCount = tasks.filter(task => {
+                    return task.dueDate && !task.completed && new Date(task.dueDate) < new Date();
+                }).length;
+                
+                totalTasksSpan.textContent = totalTasks;
+                completedTasksSpan.textContent = completedCount;
+                pendingTasksSpan.textContent = pendingCount;
+                overdueTasksSpan.textContent = overdueCount;
+                
+                // Update progress
+                const progress = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+                progressPercent.textContent = `${progress}%`;
+                progressFill.style.width = `${progress}%`;
+            }
+            
+            // Set notification for task deadline
+            function setNotification(taskId, taskText, dueDate) {
+                const timeUntilDue = dueDate.getTime() - Date.now();
+                
+                // Notify 1 hour before deadline
+                const notifyTime = timeUntilDue - (60 * 60 * 1000);
+                
+                if (notifyTime > 0) {
+                    setTimeout(() => {
+                        // Check if task is still pending
+                        const task = tasks.find(t => t.id === taskId);
+                        if (task && !task.completed) {
+                            if (Notification.permission === 'granted') {
+                                new Notification('Task Deadline Approaching', {
+                                    body: `"${taskText}" is due in 1 hour!`,
+                                    icon: '/favicon.ico'
+                                });
+                            } else if (Notification.permission !== 'denied') {
+                                Notification.requestPermission().then(permission => {
+                                    if (permission === 'granted') {
+                                        new Notification('Task Deadline Approaching', {
+                                            body: `"${taskText}" is due in 1 hour!`,
+                                            icon: '/favicon.ico'
+                                        });
+                                    }
+                                });
+                            }
+                            
+                            // Also show an alert if browser notifications are blocked
+                            alert(`Task "${taskText}" is due in 1 hour!`);
+                        }
+                    }, notifyTime);
+                }
+            }
+            
+            // Request notification permission on page load
+            if ('Notification' in window) {
+                Notification.requestPermission();
+            }
+            
+            // Focus the input field on page load
+            taskInput.focus();
         });
-        
-        function setupEventListeners() {
-            // Dark mode toggle
-            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
-            
-            // Print button
-            document.getElementById('printBtn').addEventListener('click', function() {
-                window.print();
-            });
-            
-            // Include fees checkbox
-            document.getElementById('includeFees').addEventListener('change', function() {
-                document.getElementById('feesSection').classList.toggle('hidden', !this.checked);
-            });
-            
-            // Extra payments checkbox
-            document.getElementById('extraPayments').addEventListener('change', function() {
-                document.getElementById('extraPaymentsSection').classList.toggle('hidden', !this.checked);
-            });
-            
-            // Extra payment frequency change
-            document.getElementById('extraPaymentFrequency').addEventListener('change', function() {
-                document.getElementById('extraPaymentStartMonthSection').classList.toggle('hidden', this.value === 'once');
-            });
-            
-            // Calculate button
-            document.getElementById('calculateBtn').addEventListener('click', calculateLoan);
-            
-            // Tab switching
-            const tabs = document.querySelectorAll('#resultsTabs button');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs and panes
-                    document.querySelectorAll('#resultsTabs button').forEach(t => {
-                        t.classList.remove('tab-active', 'text-blue-600', 'border-blue-600');
-                        t.classList.add('text-gray-500', 'border-transparent');
-                    });
-                    
-                    document.querySelectorAll('.tab-pane').forEach(pane => {
-                        pane.classList.add('hidden');
-                    });
-                    
-                    // Add active class to clicked tab and show corresponding pane
-                    this.classList.add('tab-active', 'text-blue-600', 'border-blue-600');
-                    this.classList.remove('text-gray-500', 'border-transparent');
-                    
-                    const tabName = this.getAttribute('data-tab');
-                    document.getElementById(`${tabName}Tab`).classList.remove('hidden');
-                    
-                    // If charts tab is selected, redraw charts to ensure they're visible
-                    if (tabName === 'charts') {
-                        setTimeout(() => {
-                            if (window.pieChart) window.pieChart.update();
-                            if (window.lineChart) window.lineChart.update();
-                        }, 100);
-                    }
-                });
-            });
-            
-            // Pagination
-            document.getElementById('prevPage').addEventListener('click', showPrevPage);
-            document.getElementById('nextPage').addEventListener('click', showNextPage);
-            
-            // Export to CSV
-            document.getElementById('exportCSV').addEventListener('click', exportToCSV);
-            
-            // Add comparison loan
-            document.getElementById('addComparisonBtn').addEventListener('click', addComparisonLoan);
-            
-            // Early payoff calculation
-            document.getElementById('calculatePayoffBtn').addEventListener('click', calculateEarlyPayoff);
-            
-            // Refinance calculation
-            document.getElementById('calculateRefinanceBtn').addEventListener('click', calculateRefinance);
-        }
-        
-        // Global variables for loan data and pagination
-        let currentLoanData = null;
-        let currentPage = 1;
-        const itemsPerPage = 12;
-        
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const icon = document.querySelector('#darkModeToggle i');
-            if (document.body.classList.contains('dark-mode')) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-            } else {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-            }
-        }
-        
-        function formatINR(amount) {
-            return new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount).replace('₹', '₹ ');
-        }
-        
-        function calculateLoan() {
-            // Get input values
-            const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
-            const interestRate = parseFloat(document.getElementById('interestRate').value) / 100 || 0;
-            let loanTerm = parseInt(document.getElementById('loanTerm').value) || 1;
-            const termType = document.getElementById('termType').value;
-            const paymentFrequency = document.getElementById('paymentFrequency').value;
-            const includeFees = document.getElementById('includeFees').checked;
-            const loanFees = includeFees ? parseFloat(document.getElementById('loanFees').value) || 0 : 0;
-            const insuranceFees = includeFees ? parseFloat(document.getElementById('insuranceFees').value) || 0 : 0;
-            const extraPayments = document.getElementById('extraPayments').checked;
-            const extraPaymentAmount = extraPayments ? parseFloat(document.getElementById('extraPaymentAmount').value) || 0 : 0;
-            const extraPaymentFrequency = extraPayments ? document.getElementById('extraPaymentFrequency').value : 'monthly';
-            const extraPaymentStartMonth = extraPayments ? parseInt(document.getElementById('extraPaymentStartMonth').value) || 0 : 0;
-            const startDate = new Date(document.getElementById('startDate').value);
-            
-            // Convert term to months if in years
-            if (termType === 'years') {
-                loanTerm *= 12;
-            }
-            
-            // Calculate payment frequency multiplier
-            let paymentsPerYear = 12;
-            if (paymentFrequency === 'quarterly') {
-                paymentsPerYear = 4;
-            } else if (paymentFrequency === 'half-yearly') {
-                paymentsPerYear = 2;
-            } else if (paymentFrequency === 'yearly') {
-                paymentsPerYear = 1;
-            }
-            
-            // Calculate monthly interest rate
-            const periodicInterestRate = interestRate / paymentsPerYear;
-            
-            // Calculate payment amount
-            const totalPayments = loanTerm;
-            let paymentAmount = 0;
-            
-            if (interestRate > 0) {
-                paymentAmount = (loanAmount + loanFees + insuranceFees) * periodicInterestRate * 
-                                Math.pow(1 + periodicInterestRate, totalPayments) / 
-                                (Math.pow(1 + periodicInterestRate, totalPayments) - 1);
-            } else {
-                paymentAmount = (loanAmount + loanFees + insuranceFees) / totalPayments;
-            }
-            
-            // Generate amortization schedule
-            let balance = loanAmount + loanFees + insuranceFees;
-            let totalInterest = 0;
-            let amortizationSchedule = [];
-            let yearlySummary = [];
-            let currentYear = startDate.getFullYear();
-            let yearlyPrincipal = 0;
-            let yearlyInterest = 0;
-            
-            for (let i = 1; i <= totalPayments; i++) {
-                // Calculate payment date based on frequency
-                let paymentDate = new Date(startDate);
-                if (paymentFrequency === 'monthly') {
-                    paymentDate.setMonth(paymentDate.getMonth() + i - 1);
-                } else if (paymentFrequency === 'quarterly') {
-                    paymentDate.setMonth(paymentDate.getMonth() + (i - 1) * 3);
-                } else if (paymentFrequency === 'half-yearly') {
-                    paymentDate.setMonth(paymentDate.getMonth() + (i - 1) * 6);
-                } else if (paymentFrequency === 'yearly') {
-                    paymentDate.setFullYear(paymentDate.getFullYear() + i - 1);
-                }
-                
-                // Calculate interest and principal for this payment
-                let interest = balance * periodicInterestRate;
-                let principal = paymentAmount - interest;
-                
-                // Check for extra payments
-                let extraPayment = 0;
-                if (extraPayments && i > extraPaymentStartMonth) {
-                    if (extraPaymentFrequency === 'monthly') {
-                        extraPayment = extraPaymentAmount;
-                    } else if (extraPaymentFrequency === 'yearly' && i % 12 === 0) {
-                        extraPayment = extraPaymentAmount;
-                    } else if (extraPaymentFrequency === 'once' && i === extraPaymentStartMonth + 1) {
-                        extraPayment = extraPaymentAmount;
-                    }
-                }
-                
-                // Apply extra payment to principal
-                if (extraPayment > 0) {
-                    principal += extraPayment;
-                    // Adjust payment amount if extra payment would cause balance to go negative
-                    if (principal > balance) {
-                        extraPayment = balance - (paymentAmount - interest);
-                        principal = balance;
-                    }
-                }
-                
-                // Adjust final payment if needed
-                if (i === totalPayments) {
-                    principal = balance;
-                    paymentAmount = principal + interest;
-                }
-                
-                // Update balance and totals
-                balance -= principal;
-                totalInterest += interest;
-                
-                // Add to amortization schedule
-                amortizationSchedule.push({
-                    paymentNumber: i,
-                    date: paymentDate,
-                    payment: paymentAmount + (extraPayment > 0 ? extraPayment : 0),
-                    principal: principal,
-                    interest: interest,
-                    extraPayment: extraPayment,
-                    balance: balance > 0 ? balance : 0
-                });
-                
-                // Track yearly summary
-                yearlyPrincipal += principal;
-                yearlyInterest += interest;
-                
-                // Check if year has changed or this is the last payment
-                if (paymentDate.getFullYear() !== currentYear || i === totalPayments) {
-                    yearlySummary.push({
-                        year: currentYear,
-                        principal: yearlyPrincipal,
-                        interest: yearlyInterest,
-                        balance: balance > 0 ? balance : 0
-                    });
-                    
-                    currentYear = paymentDate.getFullYear();
-                    yearlyPrincipal = 0;
-                    yearlyInterest = 0;
-                }
-                
-                // Break if balance is paid off
-                if (balance <= 0) {
-                    break;
-                }
-            }
-            
-            // Calculate total cost
-            const totalCost = loanAmount + loanFees + insuranceFees + totalInterest;
-            
-            // Get payoff date (last payment date)
-            const payoffDate = amortizationSchedule.length > 0 ? 
-                              amortizationSchedule[amortizationSchedule.length - 1].date : 
-                              new Date(startDate);
-            
-            // Store loan data globally
-            currentLoanData = {
-                loanAmount: loanAmount,
-                interestRate: interestRate,
-                loanTerm: loanTerm,
-                paymentFrequency: paymentFrequency,
-                paymentAmount: paymentAmount,
-                totalInterest: totalInterest,
-                totalCost: totalCost,
-                payoffDate: payoffDate,
-                amortizationSchedule: amortizationSchedule,
-                yearlySummary: yearlySummary,
-                extraPayments: extraPayments,
-                extraPaymentAmount: extraPaymentAmount,
-                extraPaymentFrequency: extraPaymentFrequency
-            };
-            
-            // Update UI
-            updateLoanSummary();
-            updateAmortizationTable();
-            updateYearlyScheduleTable();
-            updateCharts();
-            
-            // Reset to first page
-            currentPage = 1;
-            updatePagination();
-        }
-        
-        function updateLoanSummary() {
-            if (!currentLoanData) return;
-            
-            const { paymentAmount, totalInterest, totalCost, payoffDate } = currentLoanData;
-            
-            // Format values
-            const formattedPayment = formatINR(paymentAmount);
-            const formattedInterest = formatINR(totalInterest);
-            const formattedCost = formatINR(totalCost);
-            
-            const formattedPayoffDate = payoffDate.toLocaleDateString('en-IN', {
-                month: 'long',
-                year: 'numeric'
-            });
-            
-            // Update DOM
-            document.getElementById('monthlyPayment').textContent = formattedPayment;
-            document.getElementById('totalInterest').textContent = formattedInterest;
-            document.getElementById('totalCost').textContent = formattedCost;
-            document.getElementById('payoffDate').textContent = formattedPayoffDate;
-            document.getElementById('interestSavings').textContent = '₹0';
-        }
-        
-        function updateAmortizationTable() {
-            if (!currentLoanData) return;
-            
-            const { amortizationSchedule } = currentLoanData;
-            const tableBody = document.getElementById('amortizationTable');
-            tableBody.innerHTML = '';
-            
-            // Calculate start and end index for current page
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = Math.min(startIndex + itemsPerPage, amortizationSchedule.length);
-            
-            for (let i = startIndex; i < endIndex; i++) {
-                const payment = amortizationSchedule[i];
-                
-                // Format values
-                const formattedDate = payment.date.toLocaleDateString('en-IN');
-                const formattedPayment = formatINR(payment.payment);
-                const formattedPrincipal = formatINR(payment.principal);
-                const formattedInterest = formatINR(payment.interest);
-                const formattedBalance = formatINR(payment.balance);
-                
-                // Create row
-                const row = document.createElement('tr');
-                row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-                
-                row.innerHTML = `
-                    <td class="py-2 px-4 border">${payment.paymentNumber}</td>
-                    <td class="py-2 px-4 border">${formattedDate}</td>
-                    <td class="py-2 px-4 border">${formattedPayment}</td>
-                    <td class="py-2 px-4 border">${formattedPrincipal}</td>
-                    <td class="py-2 px-4 border">${formattedInterest}</td>
-                    <td class="py-2 px-4 border">${formattedBalance}</td>
-                `;
-                
-                tableBody.appendChild(row);
-            }
-        }
-        
-        function updateYearlyScheduleTable() {
-            if (!currentLoanData) return;
-            
-            const { yearlySummary } = currentLoanData;
-            const tableBody = document.getElementById('yearlyScheduleTable');
-            tableBody.innerHTML = '';
-            
-            for (let i = 0; i < yearlySummary.length; i++) {
-                const yearData = yearlySummary[i];
-                
-                // Format values
-                const formattedPrincipal = formatINR(yearData.principal);
-                const formattedInterest = formatINR(yearData.interest);
-                const formattedBalance = formatINR(yearData.balance);
-                
-                // Create row
-                const row = document.createElement('tr');
-                row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-                
-                row.innerHTML = `
-                    <td class="py-2 px-4 border">${yearData.year}</td>
-                    <td class="py-2 px-4 border">${formattedPrincipal}</td>
-                    <td class="py-2 px-4 border">${formattedInterest}</td>
-                    <td class="py-2 px-4 border">${formattedBalance}</td>
-                `;
-                
-                tableBody.appendChild(row);
-            }
-        }
-        
-        function updateCharts() {
-            if (!currentLoanData) return;
-            
-            const { loanAmount, totalInterest, amortizationSchedule } = currentLoanData;
-            
-            // Pie Chart - Payment Breakdown
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            
-            if (window.pieChart) {
-                window.pieChart.destroy();
-            }
-            
-            window.pieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Principal', 'Interest'],
-                    datasets: [{
-                        data: [loanAmount, totalInterest],
-                        backgroundColor: ['#4F46E5', '#10B981'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${formatINR(value)} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Line Chart - Amortization Over Time
-            const lineCtx = document.getElementById('lineChart').getContext('2d');
-            
-            // Prepare data for every 12th payment (yearly) or similar
-            const dataPoints = [];
-            const labels = [];
-            const principalData = [];
-            const interestData = [];
-            
-            const step = Math.max(1, Math.floor(amortizationSchedule.length / 10));
-            
-            for (let i = 0; i < amortizationSchedule.length; i += step) {
-                const payment = amortizationSchedule[i];
-                dataPoints.push(payment);
-                labels.push(`Payment ${payment.paymentNumber}`);
-                principalData.push(payment.principal);
-                interestData.push(payment.interest);
-            }
-            
-            // Add last payment if not already included
-            if (amortizationSchedule.length > 0) {
-                const lastPayment = amortizationSchedule[amortizationSchedule.length - 1];
-                if (dataPoints[dataPoints.length - 1].paymentNumber !== lastPayment.paymentNumber) {
-                    labels.push(`Payment ${lastPayment.paymentNumber}`);
-                    principalData.push(lastPayment.principal);
-                    interestData.push(lastPayment.interest);
-                }
-            }
-            
-            if (window.lineChart) {
-                window.lineChart.destroy();
-            }
-            
-            window.lineChart = new Chart(lineCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Principal',
-                            data: principalData,
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            fill: true,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Interest',
-                            data: interestData,
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.dataset.label || '';
-                                    const value = context.raw || 0;
-                                    return `${label}: ${formatINR(value)}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return formatINR(value);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function showPrevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                updateAmortizationTable();
-                updatePagination();
-            }
-        }
-        
-        function showNextPage() {
-            if (!currentLoanData) return;
-            
-            const totalPages = Math.ceil(currentLoanData.amortizationSchedule.length / itemsPerPage);
-            if (currentPage < totalPages) {
-                currentPage++;
-                updateAmortizationTable();
-                updatePagination();
-            }
-        }
-        
-        function updatePagination() {
-            if (!currentLoanData) return;
-            
-            const totalPages = Math.ceil(currentLoanData.amortizationSchedule.length / itemsPerPage);
-            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
-            
-            document.getElementById('prevPage').disabled = currentPage <= 1;
-            document.getElementById('nextPage').disabled = currentPage >= totalPages;
-        }
-        
-        function exportToCSV() {
-            if (!currentLoanData) return;
-            
-            const { amortizationSchedule } = currentLoanData;
-            
-            // CSV header
-            let csv = 'Payment #,Date,Payment,Principal,Interest,Extra Payment,Balance\n';
-            
-            // Add data rows
-            amortizationSchedule.forEach(payment => {
-                const date = payment.date.toLocaleDateString();
-                csv += `${payment.paymentNumber},"${date}",${payment.payment},${payment.principal},${payment.interest},${payment.extraPayment},${payment.balance}\n`;
-            });
-            
-            // Create download link
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'loan_amortization_schedule.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        function addComparisonLoan() {
-            const container = document.getElementById('comparisonContainer');
-            
-            // Create comparison card
-            const card = document.createElement('div');
-            card.className = 'card bg-white rounded-lg shadow-md p-4 mb-4';
-            
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-semibold">Comparison Loan</h3>
-                    <button class="text-red-500 hover:text-red-700 delete-comparison">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="currency-input">
-                        <label class="block text-xs text-gray-600 mb-1">Amount</label>
-                        <input type="number" class="w-full p-1 border border-gray-300 rounded-md comparison-amount" value="2500000">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Rate (%)</label>
-                        <input type="number" class="w-full p-1 border border-gray-300 rounded-md comparison-rate" value="8.5" step="0.01">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Term (years)</label>
-                        <input type="number" class="w-full p-1 border border-gray-300 rounded-md comparison-term" value="20">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">EMI</label>
-                        <input type="text" class="w-full p-1 border border-gray-300 rounded-md comparison-payment" readonly>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <button class="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-bold py-1 px-2 rounded-md calculate-comparison">
-                        Calculate
-                    </button>
-                </div>
-            `;
-            
-            container.appendChild(card);
-            
-            // Set up event listeners for the new card
-            const deleteBtn = card.querySelector('.delete-comparison');
-            deleteBtn.addEventListener('click', function() {
-                container.removeChild(card);
-            });
-            
-            const calculateBtn = card.querySelector('.calculate-comparison');
-            calculateBtn.addEventListener('click', function() {
-                calculateComparisonLoan(card);
-            });
-            
-            // Calculate initial values
-            calculateComparisonLoan(card);
-        }
-        
-        function calculateComparisonLoan(card) {
-            const amount = parseFloat(card.querySelector('.comparison-amount').value) || 0;
-            const rate = parseFloat(card.querySelector('.comparison-rate').value) / 100 || 0;
-            const term = parseInt(card.querySelector('.comparison-term').value) || 1;
-            
-            // Calculate monthly payment
-            const monthlyRate = rate / 12;
-            const payments = term * 12;
-            let payment = 0;
-            
-            if (rate > 0) {
-                payment = amount * monthlyRate * Math.pow(1 + monthlyRate, payments) / 
-                         (Math.pow(1 + monthlyRate, payments) - 1);
-            } else {
-                payment = amount / payments;
-            }
-            
-            // Format and display payment
-            const formattedPayment = formatINR(payment);
-            
-            card.querySelector('.comparison-payment').value = formattedPayment;
-        }
-        
-        function calculateEarlyPayoff() {
-            if (!currentLoanData) return;
-            
-            const targetYears = parseInt(document.getElementById('payoffYears').value) || 15;
-            const targetMonths = targetYears * 12;
-            
-            const { loanAmount, interestRate, paymentFrequency } = currentLoanData;
-            
-            // Calculate payments per year
-            let paymentsPerYear = 12;
-            if (paymentFrequency === 'quarterly') {
-                paymentsPerYear = 4;
-            } else if (paymentFrequency === 'half-yearly') {
-                paymentsPerYear = 2;
-            } else if (paymentFrequency === 'yearly') {
-                paymentsPerYear = 1;
-            }
-            
-            // Calculate monthly interest rate
-            const periodicInterestRate = interestRate / paymentsPerYear;
-            
-            // Calculate new payment amount
-            const newPayment = loanAmount * periodicInterestRate * 
-                              Math.pow(1 + periodicInterestRate, targetMonths) / 
-                              (Math.pow(1 + periodicInterestRate, targetMonths) - 1);
-            
-            // Calculate total interest with new payment
-            const totalInterest = (newPayment * targetMonths) - loanAmount;
-            
-            // Calculate interest savings
-            const interestSavings = currentLoanData.totalInterest - totalInterest;
-            
-            // Format values
-            const formattedNewPayment = formatINR(newPayment);
-            const formattedInterestSavings = formatINR(interestSavings);
-            
-            // Update DOM
-            document.getElementById('newMonthlyPayment').textContent = formattedNewPayment;
-            document.getElementById('payoffInterestSavings').textContent = formattedInterestSavings;
-        }
-        
-        function calculateRefinance() {
-            if (!currentLoanData) return;
-            
-            const newRate = parseFloat(document.getElementById('refinanceRate').value) / 100 || 0;
-            const newTerm = parseInt(document.getElementById('refinanceTerm').value) || 20;
-            const refinanceCost = parseFloat(document.getElementById('refinanceCost').value) || 0;
-            
-            const { loanAmount, paymentAmount } = currentLoanData;
-            
-            // Calculate new monthly payment
-            const monthlyRate = newRate / 12;
-            const payments = newTerm * 12;
-            let newPayment = 0;
-            
-            if (newRate > 0) {
-                newPayment = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, payments) / 
-                            (Math.pow(1 + monthlyRate, payments) - 1);
-            } else {
-                newPayment = loanAmount / payments;
-            }
-            
-            // Calculate monthly savings
-            const monthlySavings = paymentAmount - newPayment;
-            
-            // Calculate break-even point (in months)
-            const breakEvenMonths = monthlySavings > 0 ? Math.ceil(refinanceCost / monthlySavings) : Infinity;
-            const breakEvenYears = breakEvenMonths / 12;
-            
-            // Format values
-            const formattedNewPayment = formatINR(newPayment);
-            const formattedMonthlySavings = formatINR(monthlySavings);
-            
-            const formattedBreakEven = breakEvenYears < 100 ? 
-                                      breakEvenYears.toFixed(1) + ' years' : 
-                                      'Never';
-            
-            // Update DOM
-            document.getElementById('refinanceMonthlyPayment').textContent = formattedNewPayment;
-            document.getElementById('monthlySavings').textContent = formattedMonthlySavings;
-            document.getElementById('breakEvenPoint').textContent = formattedBreakEven;
-        }
     </script>
 </body>
 </html>
